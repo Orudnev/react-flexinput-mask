@@ -1,0 +1,36 @@
+{
+  "name": "react-flexinput-mask",
+  "version": "1.0.3",
+  "description": "Input masked component for React allowing to use variable length sections in mask definitions",
+  "main": "index.ts",
+  "scripts": {
+    "clean": "rmdir /s/q dist",
+    "copyCfgFiles": "for %I in (package.json README.md LICENSE) do copy %I /y dist", 
+    "copyCssFiles": "copy src\\*.css dist\\*.*",
+    "build": "npm run clean && tsc && npm run copyCfgFiles && npm run copyCssFiles",
+    "publish": "npm run build && npm publish ./dist",
+    "unpublish": "npm unpublish react-flexinput-mask@1.0.0"
+  },
+  "keywords": [
+    "react",
+    "input",
+    "flexinput",
+    "variable",
+    "length",
+    "mask",
+    "masked",
+    "react-component"
+  ],
+  "author": "Oleg Rudnev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Orudnev/react-flexinput-mask"
+  },  
+  "devDependencies": {
+    "@types/react": "^18.0.25",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^4.8.4"
+  }
+}
