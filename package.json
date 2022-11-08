@@ -4,7 +4,7 @@
   "description": "Input masked component for React allowing to use variable length sections in mask definitions",
   "main": "index.ts",
   "scripts": {
-    "clean": "rmdir /s/q dist",
+    "clean": "IF EXIST dist RMDIR /s/q dist",
     "copyCfgFiles": "for %I in (package.json README.md LICENSE) do copy %I /y dist", 
     "copyCssFiles": "copy src\\*.css dist\\*.*",
     "build": "npm run clean && tsc && npm run copyCfgFiles && npm run copyCssFiles",
