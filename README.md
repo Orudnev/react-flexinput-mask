@@ -1,5 +1,5 @@
 # react-flexinput-mask
-Input masked component for React allowing to use variable length sections in mask definitions
+Input masked component for React allowing to use variable length sections in mask definitions. Ability to enter text sections of variable length allows to impement masked input of e-mail addresses, post addresses and other structured text of variable length.
 
 # [Live Demo](https://orudnev.github.io/react-flexinputmask-demo/)
 
