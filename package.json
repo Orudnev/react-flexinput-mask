@@ -1,15 +1,16 @@
 {
   "name": "react-flexinput-mask",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Input masked component for React allowing to use variable length sections in mask definitions",
   "main": "index.ts",
   "scripts": {
     "clean": "IF EXIST dist RMDIR /s/q dist",
+    "updateSrc":"copy \"..\\react-flexinputmask-demo\\src/RFlexInputMask\\*.*\" src\\*.*",
     "copyCfgFiles": "for %I in (package.json README.md LICENSE) do copy %I /y dist", 
     "copyCssFiles": "copy src\\*.css dist\\*.*",
     "build": "npm run clean && tsc && npm run copyCfgFiles && npm run copyCssFiles",
     "publish": "npm run build && npm publish ./dist",
-    "unpublish": "npm unpublish react-flexinput-mask@1.0.0"
+    "unpublish": "npm unpublish react-flexinput-mask@1.0.3"
   },
   "keywords": [
     "react",

@@ -10,7 +10,10 @@ export interface IPlaceHolderItem {
 
 export interface IInputMaskProps {
     placeHolder: IPlaceHolderItem[]; 
-    onChange?:(instance:FlexInputMask)=>boolean;   
+    style?:any;
+    onChange?:(instance:FlexInputMask,newValue:string)=>boolean;
+    onSectionGotFocus?:(instance:FlexInputMask)=>void;   
+    onSectionLostFocus?:(instance:FlexInputMask)=>void;
 }
 
 interface inputMaskPosition {
@@ -24,7 +27,7 @@ export interface IInputMaskState {
     sectionAlredyEdited: boolean[];
 }
 
-export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskState>{
+export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMaskState>{
     sectRefs: any[] = [];
     initValueArray: any[];
     sectionLengthArray: any[];
@@ -147,7 +150,7 @@ export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskSt
 
         let customValidation = ()=>{
             if (this.props.onChange){
-                let result = this.props.onChange(this);
+                let result = this.props.onChange(this,newValue);
                 if(!result){
                     rollbackChanges();
                 }
@@ -202,9 +205,10 @@ export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskSt
         }     
     }
 
-
-
     handleSectionGotFocus(event: any, index: number){   
+        if(this.props.onSectionGotFocus){
+            this.props.onSectionGotFocus(this);
+        }
         let prevIndex = this.state.currentPosition.sectionIndex;
         let newPos = this.state.currentPosition.position;
         if(index > prevIndex){
@@ -229,13 +233,21 @@ export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskSt
     }
 
     handleSectionLostFocus(event:any,index: number){
+       let fireLostFocusEvent = ()=>{
+            if(this.props.onSectionLostFocus){
+                this.props.onSectionLostFocus(this);
+            }
+       } 
        if(!this.state.valueArray[index]){
+           //set to current section default value if no symbols were entered 
            let newArr = [...this.state.valueArray];
            newArr[index] = this.initValueArray[index];
            setTimeout(() => {
-            this.setState({valueArray:newArr});               
+            this.setState({valueArray:newArr},fireLostFocusEvent);               
            }, 200); 
+           return;
        }
+       fireLostFocusEvent();
     }
 
     renderInputSection(ph: IPlaceHolderItem, index: number) {
@@ -286,7 +298,7 @@ export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskSt
 
     render() {
         return (
-            <div className="flex-input-mask">
+            <div className="flex-input-mask" style={this.props.style}>
                 {this.props.placeHolder.map((itm, index) => {
                     return this.renderInputSection(itm, index);
                 })}
@@ -303,7 +315,5 @@ export class FlexInputMask extends React.Component<IInputMaskProps, IInputMaskSt
         let rv = regex.test(textToValidate);
         return rv;
     }
-
-
 }
 
