@@ -28,11 +28,12 @@ return (
 |--    |-- |--|--|
 | **placeHolder**   |**[`IPlaceHolderItem[]`](#IPlaceHolderItem)** ||The **placeHolder** property is an array of **sections**. Each section contains properties that determine the appearance of the section and the rules for entering symbols. |
 | **style?**   |**object** ||used for defining custom style properties (width,height ...)|
+
 # Events
-| Name   |Event Handler Type| Description |
-|--    |-- |--|
-|  **onSectionGotFocus?**|(instance:**FlexInputMask**)=>**void** |fires when any section of placeHolder gets a focus.|
-|  **onChange?**|(instance:**FlexInputMask**,newValue:**string**)=>**boolean**)=>**void** |fires when user changes section content. **newValue** - not commited changes, if **onChange** handler returns **false** the changes would be rejected (previous value will be restored) |
-|  **onSectionLostFocus?**|(instance:**FlexInputMask**)=>**void** |fires when any section of placeHolder losts a focus.|
-
-
+| Name   | Event Handler Type|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
+|-|-|-|
+|  **onSectionGotFocus?**|(instance: **FlexInputMask**)=>**void** |fires when any section of placeHolder gets a focus|
+|  **onChange?**|(instance: **FlexInputMask**, newValue:**string**)=>**boolean**) =>**void** |fires when user changes section content. **newValue** - not commited changes, if **onChange** handler returns **false** the changes would be rejected (previous value will be restored) |
+|  **onSectionLostFocus?**|(instance:**FlexInputMask**) =>**void** |fires when any section of placeHolder losts a focus.|
+```
+```
