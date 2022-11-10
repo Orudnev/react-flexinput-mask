@@ -27,7 +27,7 @@ return (
 | Name   |Type | Default | Description |
 |--    |-- |--|--|
 | **placeHolder**   |**[`IPlaceHolderItem[]`](#IPlaceHolderItem)** ||The **placeHolder** property is an array of **sections**. Each section contains properties that determine the appearance of the section and the rules for entering symbols. |
-| **style?**   |**object** ||used for defining custom style properties (width,height ...)|
+| **style?**   |**object** ||custom css style that applies to **PlaceHolderItem**(section) element|
 
 # Events
 | Name   | Event Handler Type|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
@@ -35,5 +35,20 @@ return (
 |  **onSectionGotFocus?**|(instance: **FlexInputMask**)=>**void** |fires when any section of placeHolder gets a focus|
 |  **onChange?**|(instance: **FlexInputMask**, newValue:**string**)=>**boolean**) =>**void** |fires when user changes section content. **newValue** - not commited changes, if **onChange** handler returns **false** the changes would be rejected (previous value will be restored) |
 |  **onSectionLostFocus?**|(instance:**FlexInputMask**) =>**void** |fires when any section of placeHolder losts a focus.|
+# Methods
+```jsx
+getFormattedValue(includeDelimiters:boolean = true):string
 ```
-```
+Returns value of FlexInputMask component. Depending on parameter includeDelimiters returned string would contain delimiters or not.
+
+# `IPlaceHolderItem`
+PlaceHolderItem used to define input section rules
+
+### Properties
+| Name   |Type |  Description |
+|--    |-- |--|
+|**text**|**string**|Text of section that will be displayed as placeholder|
+|**isPersistant?**|**boolean**|There are 2 types of sections: editable and readonly. If isPersistant == false or omitted then section is editable|
+|**isVariableLength**|**boolean**|Allows to enter strings of variable length if true|
+|**delimitertext?**|**string**|Delimiter symbol. Delimiter symbol will be displayed after section value, After entering delimiter symbol into input section the focus will be moved to the next input section|
+|**regex?**|**string**|Regular expresion used to filter symbols. If symbol is not allowed its input will be blocked|
