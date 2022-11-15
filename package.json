@@ -10,7 +10,8 @@
     "copyCssFiles": "copy src\\*.css dist\\*.*",
     "build": "npm run clean && tsc && npm run copyCfgFiles && npm run copyCssFiles",
     "build-and-publish": "npm run build && npm publish ./dist",
-    "unpublish": "npm unpublish react-flexinput-mask@1.0.3"
+    "unpublish": "npm unpublish react-flexinput-mask@1.0.3",
+    "deprecate": "npm deprecate react-flexinput-mask@\"< 1.0.14\" \"custom stylization is implemented in v1.0.14\""
   },
   "keywords": [
     "react",
