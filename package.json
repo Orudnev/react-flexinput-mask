@@ -1,6 +1,6 @@
 {
   "name": "react-flexinput-mask",
-  "version": "1.0.12",
+  "version": "1.0.14",
   "description": "Input masked component for React allowing to use variable length sections in mask definitions",
   "main": "index.ts",
   "scripts": {
