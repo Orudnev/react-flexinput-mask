@@ -12,7 +12,7 @@ npm install react-flexinput-mask
 
 ```jsx
 import  React  from  'react';
-import  {FlexInputMask}  from  'react-flexinput-mask';
+import {FlexInputMask} from 'react-flexinput-mask/index';
 
 function App() {
 return (
@@ -52,3 +52,4 @@ PlaceHolderItem used to define input section rules
 |**isVariableLength**|**boolean**|Allows to enter strings of variable length if true|
 |**delimitertext?**|**string**|Delimiter symbol. Delimiter symbol will be displayed after section value, After entering delimiter symbol into input section the focus will be moved to the next input section|
 |**regex?**|**string**|Regular expresion used to filter symbols. If symbol is not allowed its input will be blocked|
+|**customCssClass?**|**string**|ClassName attribute of the FlexInputMask component. See example of usage in "**Style**" partition of [`Live Demo[]`](https://orudnev.github.io/react-flexinputmask-demo/)|
