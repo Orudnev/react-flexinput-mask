@@ -33,7 +33,8 @@ return (
 | Name   | Event Handler Type|&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Description &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|
 |-|-|-|
 |  **onSectionGotFocus?**|(instance: **FlexInputMask**)=>**void** |fires when any section of placeHolder gets a focus|
-|  **onChange?**|(instance: **FlexInputMask**, newValue:**string**)=>**boolean**) =>**void** |fires when user changes section content. **newValue** - not commited changes, if **onChange** handler returns **false** the changes would be rejected (previous value will be restored) |
+|  **onChanging?**|(instance: **FlexInputMask**, newValue:**string**)=>**boolean** |fires when user changes section content. **newValue** - not commited changes, if **onChanging** handler returns **false** the changes would be rejected (previous value will be restored) |
+|  **onChanged**|(instance: **FlexInputMask**) =>**void** |fires when changes of section content have been applied.|
 |  **onSectionLostFocus?**|(instance:**FlexInputMask**) =>**void** |fires when any section of placeHolder losts a focus.|
 # Methods
 ```jsx
