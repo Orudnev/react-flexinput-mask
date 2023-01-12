@@ -1,4 +1,4 @@
-import React, { createRef, useState } from 'react';
+import React, { createRef, useState, SyntheticEvent } from 'react';
 import './FlexInputMask.css';
 export interface IPlaceHolderItem {
     text: string;
@@ -12,7 +12,8 @@ export interface IInputMaskProps {
     placeHolder: IPlaceHolderItem[];
     style?: any;
     customCssClass?: string;
-    onChange?: (instance: FlexInputMask, newValue: string) => boolean;
+    onChanging?: (instance: FlexInputMask, newValue: string) => boolean;
+    onChanged?: (instance: FlexInputMask) => void;
     onSectionGotFocus?: (instance: FlexInputMask) => void;
     onSectionLostFocus?: (instance: FlexInputMask) => void;
 }
@@ -34,7 +35,6 @@ enum EditMode {
 export interface IInputMaskState {
     focused: boolean;
     valueArray: IsectionValue[];
-    sectionAlredyEdited: boolean[];
     selectedSectionIndex: number;
     selectedPositionStart: number;
     editMode: EditMode;
@@ -100,16 +100,18 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
                     let newSitem: IsymbolItem = { charValue: ph.text.charAt(i), changed: false };
                     sitems.push(newSitem);
                 }
+                if(ph.isVariableLength){
+                    sitems.push({charValue:" ",changed:true}); //terminated empty symbol
+                }                
                 let newItem: IsectionValue = { items: sitems };
                 return newItem;
             });
-        }
+        } 
         let currSectInd = props.placeHolder.findIndex(s => !s.isPersistant);
         this.state = {
             focused: false,
             editMode: EditMode.replace,
             valueArray: sectionsVal,
-            sectionAlredyEdited: props.placeHolder.map(itm => false),
             selectedSectionIndex: 0,
             selectedPositionStart: 0
         }
@@ -118,12 +120,30 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
     }
 
     componentDidUpdate(prevProps: Readonly<IInputMaskProps>, prevState: Readonly<IInputMaskState>, snapshot?: any): void {
-        if (this.rootRef.current) {
-            let currSectElm = this.rootRef.current.getElementsByClassName("fim-root__section")[this.state.selectedSectionIndex];
-            let currSymbElm = currSectElm.getElementsByClassName("fim-root__symbol")[this.state.selectedPositionStart];
-            let div = (currSymbElm as HTMLDivElement);
-            //div.focus();
-            console.log("didupdate", this.state.selectedPositionStart);
+    }
+
+    fireChangingEvent(newSectionValueStr:string):boolean{
+        if(this.props.onChanging){
+            return this.props.onChanging(this,newSectionValueStr);
+        }
+        return true;
+    }
+
+    fireChangedEvent(){
+        if (this.props.onChanged) {
+            this.props.onChanged(this);
+        }
+    }
+
+    fireGotFocusEvent(){
+        if (this.props.onSectionGotFocus) {
+            this.props.onSectionGotFocus(this);
+        }
+    }
+    
+    fireLostFocusEvent(){
+        if (this.props.onSectionLostFocus) {
+            this.props.onSectionLostFocus(this);
         }
     }
 
@@ -140,21 +160,39 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
 
     getFormattedValue(includeDelimiters: boolean = true) {
         let result = "";
-        let sourceData = this.state.valueArray;
-        if (this.notCommitedValueArray.length > 0) {
-            sourceData = this.notCommitedValueArray;
-        }
         this.props.placeHolder.forEach((ph, index) => {
             if (ph.isPersistant) {
                 return;
             }
+            let sectionValueStr = "";
+            this.state.valueArray[index].items.forEach(itm=>{
+                if(itm.charValue && itm.charValue!=" "){
+                    sectionValueStr+=itm.charValue
+                }});
             if (includeDelimiters && ph.delimiterText) {
-                result += sourceData[index] + ph.delimiterText;
+                result += sectionValueStr + ph.delimiterText;
             } else {
-                result += sourceData[index];
+                result += sectionValueStr;
             }
         });
         return result;
+    }
+
+
+    getFirstEditableSectionIndex(){
+        let index = this.props.placeHolder.findIndex(itm=>!itm.isPersistant);
+        return index;
+    }
+
+    getLastEditableSectionIndex(){
+        let index = -1;
+        for(let i=this.props.placeHolder.length-1;i>-1;i--){
+            let itm = this.props.placeHolder[i];
+            if(!itm.isPersistant){
+                return i;
+            }
+        }
+        return index;
     }
 
     getNextEditableSectionIndex(currIndex: number) {
@@ -164,81 +202,152 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
         return nextIndex;
     }
 
-    gotoNextSection(currIndex: number, doNotCycle: boolean = false) {
-
+    getPrevEditableSectionIndex(currIndex: number){
+        for (let i=currIndex-1; i>=0;i--){
+            let itm = this.props.placeHolder[i];
+            if(!itm.isPersistant){
+                return i;
+            }
+        }
+        return -1;
     }
 
-    handleKeyboardInput(e: any) {
+    getSelectedSection():IsectionValue{
+        return this.state.valueArray[this.state.selectedSectionIndex];
+    }
+
+    gotoNextSection() {
+        if (this.state.selectedSectionIndex < this.state.valueArray.length - 1) {
+            let newSectionIndex = this.getNextEditableSectionIndex(this.state.selectedSectionIndex);
+            if(newSectionIndex == -1){
+                return;
+            }
+            let edMode = this.getEditMode(newSectionIndex,0);    
+            let newValueArray = [...this.state.valueArray];
+            newValueArray.forEach((sect, sectIndex) => sect.items.forEach((itm, itmIndex) => {
+                let ph = this.props.placeHolder[sectIndex];
+                if (sectIndex < newSectionIndex && !ph.isPersistant) {
+                    itm.changed = true;
+                }
+            }));
+            this.setState(
+                {selectedSectionIndex: newSectionIndex,selectedPositionStart:0,editMode:edMode,valueArray:newValueArray },
+                ()=>this.fireGotFocusEvent());
+        }    
+    }
+
+    gotoPrevSection(){
+        if (this.state.selectedSectionIndex > 0) {
+            let newSectionIndex = this.getPrevEditableSectionIndex(this.state.selectedSectionIndex);
+            if(newSectionIndex == -1){
+                return;
+            }
+            let newSection = this.state.valueArray[newSectionIndex];
+            let edMode = this.getEditMode(newSectionIndex,0);    
+            this.setState(
+                {selectedSectionIndex: newSectionIndex,selectedPositionStart:newSection.items.length-1,editMode:edMode},
+                ()=>this.fireLostFocusEvent());
+        }    
+    }
+ 
+    handleKeyboardInput(keyboardKey:string,e: React.KeyboardEvent<HTMLDivElement>|undefined = undefined ) {
         let section = this.state.valueArray[this.state.selectedSectionIndex];
         let prevSection:IsectionValue|null = null;
+        let preventDefault = ()=>{
+            if (e){
+                e.preventDefault();
+            }            
+        }
         if(this.state.selectedSectionIndex>0){
             prevSection = this.state.valueArray[this.state.selectedSectionIndex-1];
         }
-        let goToNextSection = ()=>{
-            if (this.state.selectedSectionIndex < this.state.valueArray.length - 1) {
-                let newSectionIndex = this.state.selectedSectionIndex + 1;
-                let edMode = this.getEditMode(newSectionIndex,0);    
-                this.setState({ selectedSectionIndex: newSectionIndex,selectedPositionStart:0,editMode:edMode });
-            }
-        };
-        let goToPrevSection = ()=>{
-            if (prevSection) {
-                let newSectionIndex = this.state.selectedSectionIndex - 1;
-                let edMode = this.getEditMode(newSectionIndex,prevSection.items.length-1);  
-                this.setState({ selectedSectionIndex: newSectionIndex,selectedPositionStart:prevSection.items.length-1,editMode:edMode });
-            }
-        };
         let setPosition = (newPos:number)=>{
             let edMode = this.getEditMode(this.state.selectedSectionIndex,newPos);
-            this.setState({ selectedPositionStart: newPos, editMode:edMode });            
+            let newValArray = [...this.state.valueArray];
+            newValArray.forEach((sect,sectIndex)=>sect.items.forEach((itm,itmIndex)=>{
+                if(sectIndex<this.state.selectedSectionIndex){
+                    itm.changed = true;
+                }
+                if(sectIndex==this.state.selectedSectionIndex && itmIndex<=newPos){
+                    itm.changed = true;
+                }
+            }));
+            this.setState({ selectedPositionStart: newPos, editMode:edMode, valueArray:newValArray });            
         };
-        switch (e.key) {
+        switch (keyboardKey) {
             case "End":
-                e.preventDefault();
-                let newPosition = section.items.length - 1;
-                this.setState({ selectedPositionStart: newPosition });
+                preventDefault();
+                setPosition(section.items.length - 1);
                 return;
             case "Home":
-                this.setState({ selectedPositionStart: 0 });
-                e.preventDefault()
+                preventDefault();
+                setPosition(0);
                 return;
             case "ArrowLeft":
                 if (this.state.selectedPositionStart > 0) {
                     setPosition(this.state.selectedPositionStart - 1)
                 } else {
-                    goToPrevSection();
+                    this.gotoPrevSection();
                 }
                 return;
             case "ArrowRight":
                 if (this.state.selectedPositionStart < section.items.length - 1) {
                     setPosition(this.state.selectedPositionStart + 1)
-                    console.log("right:",this.state.selectedPositionStart + 1);
                 } else {
-                    goToNextSection();
+                    this.gotoNextSection();
                 }
                 return;
             case "Backspace":
+                if(this.state.selectedPositionStart>0){
+                    let newSectionItems = [...this.getSelectedSection().items];
+                    newSectionItems.splice(this.state.selectedPositionStart-1,1);
+                    let newValArray = [...this.state.valueArray];
+                    newValArray[this.state.selectedSectionIndex].items = newSectionItems;
+                    this.setState({selectedPositionStart:this.state.selectedPositionStart-1, valueArray:newValArray});
+                }
+                return;
             case "Delete":
-            case "Shift":
+                if(this.state.selectedPositionStart<this.getSelectedSection().items.length-1){
+                    let newSectionItems = [...this.getSelectedSection().items];
+                    newSectionItems.splice(this.state.selectedPositionStart,1);
+                    let newValArray = [...this.state.valueArray];
+                    newValArray[this.state.selectedSectionIndex].items = newSectionItems;
+                    this.setState({valueArray:newValArray});
+                }
+                return;
+            case "ShiftTab":
+                if(this.state.selectedSectionIndex>this.getFirstEditableSectionIndex()){
+                    preventDefault();
+                    this.gotoNextSection();
+                }            
+                return;                
+            case "Tab":
+                if(this.state.selectedSectionIndex<this.getLastEditableSectionIndex()){
+                    preventDefault();
+                    this.gotoNextSection();
+                }            
                 return;
             default:
-                //if(this.state.selectedPositionStart)
-                this.setSymbolValue(e.key);
-                let oldSectionValue = this.state.valueArray[this.state.selectedSectionIndex];
+                if(keyboardKey.length>1){
+                    return;
+                }
+                this.setSymbolValue(keyboardKey);
 
         }
     }
 
     handleSectionGotFocus(event: any) {
-        if (this.props.onSectionGotFocus) {
-            this.props.onSectionGotFocus(this);
-        }
+        this.fireGotFocusEvent();
         if (!event.target.id) {
             return;
         }
         let [sectionIndexStr, positionStr] = event.target.id.split("_");
         let sectionIndex = parseInt(sectionIndexStr);
         let sectionValue = this.state.valueArray[sectionIndex];
+        let ph = this.props.placeHolder[sectionIndex];
+        if(ph.isPersistant){
+            return;
+        }
 
         let position = parseInt(positionStr);
         let allSymbolsUnchanged = !sectionValue.items.some(itm => itm.changed);
@@ -260,36 +369,18 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
             }));
         }
 
-        let newAlreadyEdited = [...this.state.sectionAlredyEdited];
-        if (sectionIndex != this.state.selectedSectionIndex) {
-            newAlreadyEdited[this.state.selectedSectionIndex] = true;
-        }
         let edMode = this.getEditMode(sectionIndex, position);
         this.setState(
             {
                 selectedSectionIndex: sectionIndex,
                 selectedPositionStart: position,
                 editMode: edMode,
-                sectionAlredyEdited: newAlreadyEdited,
                 valueArray: newValueArray
             });
-        console.log("newPosition:", position);
     }
 
     handleSectionLostFocus(event: any) {
-        return;
-        let fireLostFocusEvent = () => {
-            if (this.props.onSectionLostFocus) {
-                this.props.onSectionLostFocus(this);
-            }
-        }
-        fireLostFocusEvent();
-        const [sectionIndex, position] = event.target.id.split("_");
-        this.setState(
-            {
-                selectedSectionIndex: sectionIndex,
-                selectedPositionStart: position,
-            });
+        this.fireLostFocusEvent();
     }
 
     setSymbolAsChanged(symbProps: IMaskSymbolProps) {
@@ -299,10 +390,21 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
     }
 
     setSymbolValue(char: string) {
+        if(this.props.placeHolder[this.state.selectedSectionIndex].delimiterText == char){
+            this.gotoNextSection();
+            return;
+        }
+        let ph = this.props.placeHolder[this.state.selectedSectionIndex];
         let oldSection = this.state.valueArray[this.state.selectedSectionIndex];
         let updSymb = { ...oldSection.items[this.state.selectedPositionStart] };
         let newPosition = this.state.selectedPositionStart + 1;
         let currEditMode = this.getEditMode();
+        if (!ph.isVariableLength
+            && this.state.selectedSectionIndex == this.state.valueArray.length-1
+            && newPosition > oldSection.items.length) {
+                return;
+        }
+
         if (!updSymb.changed && newPosition < oldSection.items.length) {
             currEditMode = EditMode.replace;
         }
@@ -313,7 +415,7 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
             updSymb.charValue = char;
             updSymb.changed = true;
             newSectionItems[this.state.selectedPositionStart] = updSymb;
-            if (newPosition == oldSection.items.length) {
+            if (ph.isVariableLength && newPosition == oldSection.items.length) {
                 currEditMode = EditMode.insert;
                 newSectionItems.push(emptyItm);
             }
@@ -330,12 +432,24 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
             }
         }
         let newValueStr = "";
-        newSectionItems.forEach(itm => newValueStr += itm.charValue);
-        if (!this.validateChanges(this.state.selectedSectionIndex, newValueStr.trim())) {
+        newSectionItems.forEach(itm=>{
+            if(itm.charValue && itm.charValue!=" "){
+                newValueStr+=itm.charValue
+            }});            
+        if (!this.validateChanges(this.state.selectedSectionIndex, newValueStr)) {
             return;
         }
-        newValueArray[this.state.selectedSectionIndex].items = newSectionItems;
-        this.setState({ valueArray: newValueArray, selectedPositionStart: newPosition, editMode: currEditMode }, () => console.log("set:", this.state));
+        if(!this.fireChangingEvent(newValueStr)){
+            return;
+        }
+        newValueArray[this.state.selectedSectionIndex].items = newSectionItems;        
+        this.setState({ valueArray: newValueArray, selectedPositionStart: newPosition, editMode: currEditMode },
+            ()=>{
+                this.fireChangedEvent();
+                if (currEditMode==EditMode.replace && newPosition > newSectionItems.length-1){
+                    this.gotoNextSection();
+                }        
+            });
     }
 
     renderInputSection(ph: IPlaceHolderItem, sectionIndex: number) {
@@ -361,7 +475,7 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
 
 
     render() {
-        let clsStr = "fim-root" + (this.props.customCssClass ? this.props.customCssClass : "");
+        let clsStr = "fim-root " + (this.props.customCssClass ? this.props.customCssClass : "");
         return (
             <div tabIndex={0} ref={this.rootRef} className={clsStr} style={this.props.style}
                 onFocus={(e) => {
@@ -370,7 +484,11 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
                 }}
                 onBlur={() => this.setState({ focused: false })}
                 onKeyDown={(e) => {
-                    this.handleKeyboardInput(e);
+                    let key = e.key;
+                    if(e.key == "Tab" && e.shiftKey){
+                        key = "ShiftTab";
+                    }
+                    this.handleKeyboardInput(key,e);
                 }} >
                 {this.props.placeHolder.map((itm, index) => {
                     return this.renderInputSection(itm, index);
@@ -386,9 +504,6 @@ export class FlexInputMask extends React.PureComponent<IInputMaskProps, IInputMa
         }
         let regex = new RegExp(regexStr);
         let rv = regex.test(textToValidate);
-        if (!rv) {
-            console.log(textToValidate, rv, this.state);
-        }
         return rv;
     }
 }
